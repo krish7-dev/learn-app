@@ -1,0 +1,5 @@
+target/
+*.class
+application-local.yml
+.env
+*.env

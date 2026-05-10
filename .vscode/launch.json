@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-LearnHowYouLearnApplication<learn-how-you-learn-backend>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.learnhowyoulearn.LearnHowYouLearnApplication",
+            "projectName": "learn-how-you-learn-backend",
+            "args": "",
+            "vmArgs": "-Dspring.profiles.active=local -Dspring.devtools.restart.enabled=true",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

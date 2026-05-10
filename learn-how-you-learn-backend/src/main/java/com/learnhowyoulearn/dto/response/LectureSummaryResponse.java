@@ -19,6 +19,8 @@ public class LectureSummaryResponse {
     private LectureStatus status;
     private Difficulty difficulty;
     private boolean notesGenerated;
+    private String contentStatus;
+    private Integer estimatedMinutes;
     private LocalDateTime lastStudiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

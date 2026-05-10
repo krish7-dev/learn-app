@@ -43,6 +43,12 @@ public class Lecture {
     @Column(nullable = false)
     private LectureStatus status;
 
+    @Column(name = "content_status", nullable = false)
+    private String contentStatus = "NOT_ADDED";
+
+    @Column(name = "estimated_minutes", nullable = false)
+    private Integer estimatedMinutes = 60;
+
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
 

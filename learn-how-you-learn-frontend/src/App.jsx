@@ -10,6 +10,8 @@ import LecturePage from './pages/LecturePage'
 import TopicListPage from './pages/TopicListPage'
 import TopicDetailPage from './pages/TopicDetailPage'
 import RevisionPage from './pages/RevisionPage'
+import LearningTargetPage from './pages/LearningTargetPage'
+import StudyTimelinePage from './pages/StudyTimelinePage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -38,6 +40,8 @@ export default function App() {
             <Route path="/topics" element={<Layout title="Topics"><TopicListPage /></Layout>} />
             <Route path="/topics/:id" element={<Layout><TopicDetailPage /></Layout>} />
             <Route path="/revision" element={<Layout title="Revision Queue"><RevisionPage /></Layout>} />
+            <Route path="/targets" element={<Layout title="Learning Targets"><LearningTargetPage /></Layout>} />
+            <Route path="/targets/:id/timeline" element={<Layout title="Study Timeline"><StudyTimelinePage /></Layout>} />
           </Routes>
         </div>
       </BrowserRouter>

@@ -20,6 +20,8 @@ public class LectureDetailResponse {
     private String rawContent;
     private LectureStatus status;
     private Difficulty difficulty;
+    private String contentStatus;
+    private Integer estimatedMinutes;
     private LocalDateTime lastStudiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

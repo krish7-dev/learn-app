@@ -38,6 +38,38 @@ public interface LectureRepository extends JpaRepository<Lecture, Long> {
 
     long countByUserIdAndStatusAndDeletedAtIsNull(Long userId, com.learnhowyoulearn.entity.LectureStatus status);
 
+    @Query("""
+            SELECT l FROM Lecture l
+            WHERE l.userId = :userId AND l.courseId = :courseId AND l.deletedAt IS NULL
+            ORDER BY l.moduleName ASC NULLS LAST, l.sourceOrder ASC NULLS LAST, l.createdAt ASC
+            """)
+    List<Lecture> findByCourseAndUserOrdered(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    @Query("""
+            SELECT l FROM Lecture l
+            WHERE l.userId = :userId AND l.courseId = :courseId AND l.moduleName = :moduleName
+            AND l.deletedAt IS NULL
+            ORDER BY l.sourceOrder ASC NULLS LAST, l.createdAt ASC
+            """)
+    List<Lecture> findByModuleAndUser(@Param("userId") Long userId,
+                                      @Param("courseId") Long courseId,
+                                      @Param("moduleName") String moduleName);
+
+    @Query("""
+            SELECT l FROM Lecture l
+            WHERE l.userId = :userId AND l.deletedAt IS NULL
+            ORDER BY l.createdAt ASC
+            """)
+    List<Lecture> findAllByUser(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT l FROM Lecture l
+            JOIN LectureTopic lt ON lt.lectureId = l.id
+            WHERE lt.topicId = :topicId AND l.userId = :userId AND l.deletedAt IS NULL
+            ORDER BY l.sourceOrder ASC NULLS LAST, l.createdAt ASC
+            """)
+    List<Lecture> findByTopicAndUser(@Param("userId") Long userId, @Param("topicId") Long topicId);
+
     @Modifying
     @Query("UPDATE Lecture l SET l.deletedAt = :now WHERE l.courseId = :courseId AND l.deletedAt IS NULL")
     void softDeleteByCourseId(@Param("courseId") Long courseId, @Param("now") LocalDateTime now);

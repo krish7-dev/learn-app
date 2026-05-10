@@ -15,4 +15,6 @@ public class DashboardResponse {
     private long completedLectures;
     private long totalTopics;
     private long masteredTopics;
+    private List<LearningTargetResponse> activeTargets;
+    private List<StudyTimelineItemResponse> todayMinimumPlan;
 }

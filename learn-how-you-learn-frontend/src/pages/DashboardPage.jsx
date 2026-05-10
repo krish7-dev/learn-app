@@ -2,9 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { dashboardApi } from '../api/dashboardApi'
 import { revisionApi } from '../api/revisionApi'
+import { timelineApi } from '../api/timelineApi'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorMessage from '../components/common/ErrorMessage'
 import { formatDate, statusColor } from '../utils/formatters'
+
+const PRIORITY_COLORS = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#6b7280' }
+const TYPE_COLORS = {
+  ADD_TRANSCRIPT: '#7c3aed', GENERATE_NOTES: '#2563eb', STUDY_LECTURE: '#16a34a',
+  REVISION: '#d97706', WEAK_AREA: '#dc2626', PRACTICE: '#0d9484', TEACH_BACK: '#9333ea', BUFFER: '#6b7280',
+}
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -17,12 +24,93 @@ export default function DashboardPage() {
     mutationFn: ({ id }) => revisionApi.update(id, 'DONE'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['dashboard'] }),
   })
+  const markTimelineItem = useMutation({
+    mutationFn: ({ id }) => timelineApi.markItem(id, { status: 'DONE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['dashboard'] }),
+  })
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={error.message} />
 
   return (
     <div>
+      {/* Active Targets row */}
+      {data.activeTargets?.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div className="section-title" style={{ margin: 0 }}>Your Targets</div>
+            <Link to="/targets" style={{ fontSize: 12, color: 'var(--accent)' }}>Manage →</Link>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {data.activeTargets.map((t) => {
+              const pc = PRIORITY_COLORS[t.priority] ?? '#6b7280'
+              return (
+                <Link key={t.id} to={`/targets/${t.id}/timeline`}>
+                  <div className="card" style={{ minWidth: 180, cursor: 'pointer', padding: '12px 16px' }}
+                       onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{t.title}</span>
+                      <span className="badge" style={{ background: pc + '20', color: pc, fontSize: 10 }}>{t.priority}</span>
+                    </div>
+                    {t.totalLectures > 0 ? (
+                      <div>
+                        <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                          <div style={{ height: '100%', width: `${Math.min(100, t.progressPercent)}%`, background: 'var(--accent)', borderRadius: 2 }} />
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)' }}>{Math.round(t.progressPercent)}% · {t.daysRemaining}d left</div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{t.daysRemaining}d remaining</div>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {!data.activeTargets?.length && (
+        <div style={{ marginBottom: 20 }}>
+          <Link to="/targets" style={{ fontSize: 13, color: 'var(--accent)' }}>Set a learning target →</Link>
+        </div>
+      )}
+
+      {/* Today's Study Plan */}
+      {data.todayMinimumPlan?.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div className="section-title">Today's Study Plan</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {data.todayMinimumPlan.map((item) => {
+              const color = TYPE_COLORS[item.itemType] ?? '#6b7280'
+              return (
+                <div key={item.id} className="card"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span className="badge" style={{ background: color + '20', color, fontSize: 11 }}>
+                      {item.itemType.replace('_', ' ')}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500 }}>{item.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{item.estimatedMinutes} min</div>
+                    </div>
+                  </div>
+                  {item.status === 'DONE' ? (
+                    <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>✓ Done</span>
+                  ) : (
+                    <button className="btn btn-sm btn-primary"
+                      disabled={markTimelineItem.isPending}
+                      onClick={() => markTimelineItem.mutate({ id: item.id })}>
+                      Done
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Stats row */}
       <div className="stats-row">
         {[

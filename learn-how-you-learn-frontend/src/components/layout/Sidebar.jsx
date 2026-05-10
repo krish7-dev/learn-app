@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/appStore'
 const links = [
   { to: '/', label: 'Dashboard', icon: '⊞' },
   { to: '/courses', label: 'Courses', icon: '📚' },
+  { to: '/targets', label: 'Targets', icon: '🎯' },
   { to: '/topics', label: 'Topics', icon: '🧠' },
   { to: '/revision', label: 'Revision', icon: '🔁' },
 ]

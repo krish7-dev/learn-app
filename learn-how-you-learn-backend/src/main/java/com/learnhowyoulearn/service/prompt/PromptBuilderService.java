@@ -1,8 +1,16 @@
 package com.learnhowyoulearn.service.prompt;
 
 import com.learnhowyoulearn.dto.context.MemoryContext;
+import com.learnhowyoulearn.dto.context.TimelineGenerationContext;
+import com.learnhowyoulearn.entity.LearningTarget;
+import com.learnhowyoulearn.entity.Lecture;
+import com.learnhowyoulearn.entity.RevisionItem;
+import com.learnhowyoulearn.entity.WeakArea;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -15,6 +23,7 @@ public class PromptBuilderService {
     public static final String PURPOSE_SESSION_SUMMARY = "SESSION_SUMMARY";
     public static final String PURPOSE_TOPIC_NOTE_MERGE = "TOPIC_NOTE_MERGE";
     public static final String PURPOSE_WEAK_AREA_UPDATE = "WEAK_AREA_UPDATE";
+    public static final String PURPOSE_GENERATE_TIMELINE = "GENERATE_TIMELINE";
 
     public String buildBaseSystemPrompt(MemoryContext ctx) {
         StringBuilder sb = new StringBuilder();
@@ -189,6 +198,89 @@ public class PromptBuilderService {
                 """;
 
         return buildPrompt(system, user);
+    }
+
+    public String buildTimelinePrompt(TimelineGenerationContext ctx) {
+        LearningTarget target = ctx.getTarget();
+        LocalDate today = LocalDate.now();
+        long daysRemaining = ChronoUnit.DAYS.between(today, target.getTargetDate());
+        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        String system = """
+                You are a study planner for Krishna, a software engineer preparing for interviews.
+                Rules:
+                - Every day MUST have at least 1 MINIMUM-tier item with estimatedMinutes <= 15.
+                - All individual items must have estimatedMinutes <= 30. Split larger tasks across days.
+                - Never use guilt or shame language in descriptions.
+                - Plan realistic days, not perfect days.
+                - ADD_TRANSCRIPT and GENERATE_NOTES tasks are prep steps (5 min each). Schedule them before STUDY_LECTURE.
+                - NOT_ADDED lectures need: ADD_TRANSCRIPT first, then GENERATE_NOTES on a later day, then STUDY_LECTURE.
+                - TRANSCRIPT_ADDED lectures need: GENERATE_NOTES first, then STUDY_LECTURE.
+                - NOTES_GENERATED lectures: schedule STUDY_LECTURE + later REVISION/PRACTICE.
+                - COMPLETED lectures: only REVISION/PRACTICE if useful.
+                - Plan tier MINIMUM = absolute minimum for the day (1 short item). MEDIUM = steady progress. FULL = ideal day.
+                - Return STRICT valid JSON only — no markdown, no explanation outside the JSON.
+                """;
+
+        StringBuilder user = new StringBuilder();
+        user.append("Today: ").append(today.format(fmt)).append("\n");
+        user.append("Deadline: ").append(target.getTargetDate().format(fmt)).append("\n");
+        user.append("Days remaining: ").append(daysRemaining).append("\n");
+        user.append("Priority: ").append(target.getPriority()).append("\n");
+        user.append("Daily budget: ").append(target.getDailyMinutes()).append(" min\n\n");
+
+        user.append("Lectures (id | title | module | status | content_status | estimated_minutes):\n");
+        for (Lecture l : ctx.getLectures()) {
+            user.append(String.format("  %d | %s | %s | %s | %s | %d min%n",
+                    l.getId(),
+                    l.getTitle(),
+                    l.getModuleName() != null ? l.getModuleName() : "-",
+                    l.getStatus().name(),
+                    l.getContentStatus() != null ? l.getContentStatus() : "NOT_ADDED",
+                    l.getEstimatedMinutes() != null ? l.getEstimatedMinutes() : 60));
+        }
+
+        if (!ctx.getPendingRevisions().isEmpty()) {
+            user.append("\nPending revisions (title | dueAt):\n");
+            for (RevisionItem r : ctx.getPendingRevisions()) {
+                user.append(String.format("  %s | due %s%n", r.getTitle(), r.getDueAt()));
+            }
+        }
+
+        if (!ctx.getActiveWeakAreas().isEmpty()) {
+            user.append("\nActive weak areas (topic | severity):\n");
+            for (WeakArea w : ctx.getActiveWeakAreas()) {
+                user.append(String.format("  %s | %s%n", w.getTopic(), w.getSeverity()));
+            }
+        }
+
+        user.append("""
+
+                Return a JSON object with this exact structure:
+                {
+                  "days": [
+                    {
+                      "date": "YYYY-MM-DD",
+                      "items": [
+                        {
+                          "itemType": "ADD_TRANSCRIPT|GENERATE_NOTES|STUDY_LECTURE|REVISION|WEAK_AREA|PRACTICE|TEACH_BACK|BUFFER",
+                          "title": "...",
+                          "description": "...",
+                          "estimatedMinutes": 5-30,
+                          "planTier": "FULL|MEDIUM|MINIMUM",
+                          "lectureId": null or lecture id number,
+                          "topicId": null,
+                          "aiReasoning": "one-line reason for scheduling this here"
+                        }
+                      ]
+                    }
+                  ]
+                }
+
+                Generate a plan covering today through the deadline. Every day must have at least one MINIMUM item.
+                """);
+
+        return buildPrompt(system, user.toString());
     }
 
     private String buildPrompt(String system, String user) {

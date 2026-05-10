@@ -1,6 +1,7 @@
 package com.learnhowyoulearn.controller;
 
 import com.learnhowyoulearn.dto.request.AddToNotesRequest;
+import com.learnhowyoulearn.dto.request.BulkCreateLectureRequest;
 import com.learnhowyoulearn.dto.request.ConfusionRequest;
 import com.learnhowyoulearn.dto.request.CreateLectureRequest;
 import com.learnhowyoulearn.dto.request.TutorChatRequest;
@@ -10,6 +11,8 @@ import com.learnhowyoulearn.dto.response.LectureDetailResponse;
 import com.learnhowyoulearn.dto.response.LectureSummaryResponse;
 import com.learnhowyoulearn.dto.response.PageResponse;
 import com.learnhowyoulearn.dto.response.TutorChatResponse;
+
+import java.util.List;
 import com.learnhowyoulearn.service.ConfusionService;
 import com.learnhowyoulearn.service.LectureService;
 import com.learnhowyoulearn.service.NoteGenerationService;
@@ -33,6 +36,13 @@ public class LectureController {
     public LectureDetailResponse create(@PathVariable Long courseId,
                                         @Valid @RequestBody CreateLectureRequest request) {
         return lectureService.create(courseId, request);
+    }
+
+    @PostMapping("/api/v1/courses/{courseId}/lectures/bulk")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<LectureSummaryResponse> bulkCreate(@PathVariable Long courseId,
+                                                   @Valid @RequestBody BulkCreateLectureRequest request) {
+        return lectureService.bulkCreate(courseId, request);
     }
 
     @GetMapping("/api/v1/courses/{courseId}/lectures")

@@ -25,6 +25,7 @@ public class NotesPersistenceService {
     private static final long USER_ID = 1L;
 
     private final LectureNotesRepository lectureNotesRepository;
+    private final LectureRepository lectureRepository;
     private final TopicRepository topicRepository;
     private final LectureTopicRepository lectureTopicRepository;
     private final LearningEventRepository learningEventRepository;
@@ -35,6 +36,7 @@ public class NotesPersistenceService {
     @Transactional
     public LectureNotes saveAll(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse) {
         LectureNotes notes = saveOrUpdateNotes(lectureId, courseId, parsed, rawAiResponse);
+        markNotesGenerated(lectureId);
 
         List<Long> topicIds = new ArrayList<>();
         if (parsed.getExtractedTopics() != null) {
@@ -49,6 +51,13 @@ public class NotesPersistenceService {
         saveEvents(lectureId, courseId, topicIds);
 
         return notes;
+    }
+
+    private void markNotesGenerated(Long lectureId) {
+        lectureRepository.findById(lectureId).ifPresent(lecture -> {
+            lecture.setContentStatus("NOTES_GENERATED");
+            lectureRepository.save(lecture);
+        });
     }
 
     private LectureNotes saveOrUpdateNotes(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse) {

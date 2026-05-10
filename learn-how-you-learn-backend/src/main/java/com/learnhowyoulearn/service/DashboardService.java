@@ -1,8 +1,10 @@
 package com.learnhowyoulearn.service;
 
 import com.learnhowyoulearn.dto.response.DashboardResponse;
+import com.learnhowyoulearn.dto.response.LearningTargetResponse;
 import com.learnhowyoulearn.dto.response.LectureSummaryResponse;
 import com.learnhowyoulearn.dto.response.RevisionItemResponse;
+import com.learnhowyoulearn.dto.response.StudyTimelineItemResponse;
 import com.learnhowyoulearn.dto.response.TopicSummaryResponse;
 import com.learnhowyoulearn.entity.LectureStatus;
 import com.learnhowyoulearn.mapper.LectureMapper;
@@ -26,6 +28,8 @@ public class DashboardService {
     private final TopicRepository topicRepository;
     private final RevisionItemRepository revisionItemRepository;
     private final LectureMapper lectureMapper;
+    private final LearningTargetService learningTargetService;
+    private final StudyTimelineService studyTimelineService;
 
     @Transactional(readOnly = true)
     public DashboardResponse getToday() {
@@ -78,6 +82,9 @@ public class DashboardService {
         long totalTopics = topicRepository.countByUserId(USER_ID);
         long masteredTopics = topicRepository.countByUserIdAndStatus(USER_ID, "MASTERED");
 
+        List<LearningTargetResponse> activeTargets = learningTargetService.listActive();
+        List<StudyTimelineItemResponse> todayMinimumPlan = studyTimelineService.getDashboardMinimumPlan(USER_ID);
+
         return DashboardResponse.builder()
                 .continueLecture(continueLecture)
                 .revisionDue(revisionDue)
@@ -86,6 +93,8 @@ public class DashboardService {
                 .completedLectures(completedLectures)
                 .totalTopics(totalTopics)
                 .masteredTopics(masteredTopics)
+                .activeTargets(activeTargets)
+                .todayMinimumPlan(todayMinimumPlan)
                 .build();
     }
 }

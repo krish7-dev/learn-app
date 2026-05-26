@@ -3,6 +3,8 @@ services:
     build:
       context: ./learn-how-you-learn-backend
     container_name: learnapp-backend
+    ports:
+      - "8081:8081"
     environment:
       DB_URL: ${DB_URL}
       DB_USERNAME: ${DB_USERNAME}
@@ -12,14 +14,5 @@ services:
       OPENAI_CLEANUP_MODEL: ${OPENAI_CLEANUP_MODEL:-gpt-4.1-mini}
       OPENAI_CLEANUP_MAX_TOKENS: ${OPENAI_CLEANUP_MAX_TOKENS:-16000}
       OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-60}
-    restart: unless-stopped
-
-  nginx:
-    build:
-      context: ./learn-ui
-    container_name: learnapp-nginx
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
     restart: unless-stopped

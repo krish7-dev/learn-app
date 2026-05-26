@@ -1,5 +1,6 @@
 package com.learnhowyoulearn.client.openai;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +16,7 @@ public class OpenAiRequest {
     private Double temperature;
 
     @JsonProperty("max_tokens")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer maxTokens;
 
     @Getter

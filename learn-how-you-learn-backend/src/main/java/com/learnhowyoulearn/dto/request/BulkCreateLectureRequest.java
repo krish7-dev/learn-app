@@ -30,6 +30,8 @@ public class BulkCreateLectureRequest {
         @NotBlank
         private String title;
 
+        private String moduleName;
+
         private Integer sourceOrder;
 
         @Positive

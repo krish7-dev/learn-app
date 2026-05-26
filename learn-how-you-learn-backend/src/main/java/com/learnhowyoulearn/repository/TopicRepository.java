@@ -12,6 +12,7 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     Optional<Topic> findByUserIdAndNormalizedName(Long userId, String normalizedName);
     Page<Topic> findByUserIdOrderByMasteryScoreAscUpdatedAtDesc(Long userId, Pageable pageable);
     List<Topic> findByUserIdAndStatusOrderByMasteryScoreAsc(Long userId, String status);
+    List<Topic> findAllByUserId(Long userId);
 
     long countByUserId(Long userId);
 

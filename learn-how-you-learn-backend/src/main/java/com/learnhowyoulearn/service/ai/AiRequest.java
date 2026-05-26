@@ -11,4 +11,6 @@ public class AiRequest {
     private String model;
     private Double temperature;
     private String purpose;
+    private Integer timeoutSeconds;
+    private Integer maxTokens;
 }

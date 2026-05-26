@@ -36,6 +36,9 @@ public class LectureTopic {
     @Column(name = "evidence", columnDefinition = "TEXT")
     private String evidence;
 
+    @Column(name = "tree_path", columnDefinition = "TEXT")
+    private String treePath;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

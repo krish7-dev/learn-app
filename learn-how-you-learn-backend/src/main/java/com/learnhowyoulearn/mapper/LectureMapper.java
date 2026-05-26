@@ -65,6 +65,7 @@ public class LectureMapper {
                 .flashcards(notes.getFlashcards())
                 .practiceQuestions(notes.getPracticeQuestions())
                 .weakAreaChecks(notes.getWeakAreaChecks())
+                .model(notes.getModel())
                 .chatAdditions(notes.getChatAdditions())
                 .createdAt(notes.getCreatedAt())
                 .updatedAt(notes.getUpdatedAt())

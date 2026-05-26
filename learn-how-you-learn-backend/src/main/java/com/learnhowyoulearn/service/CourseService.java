@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -69,6 +70,13 @@ public class CourseService {
         if (request.getDescription() != null) course.setDescription(request.getDescription());
         if (request.getGoal() != null)        course.setGoal(request.getGoal());
         if (request.getStatus() != null)      course.setStatus(request.getStatus());
+        return courseMapper.toResponse(courseRepository.save(course));
+    }
+
+    @Transactional
+    public CourseResponse updateModuleOrder(Long id, List<String> moduleOrder) {
+        Course course = findOrThrow(id);
+        course.setModuleOrder(moduleOrder);
         return courseMapper.toResponse(courseRepository.save(course));
     }
 

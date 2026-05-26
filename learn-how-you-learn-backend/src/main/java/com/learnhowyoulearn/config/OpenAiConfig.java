@@ -14,6 +14,12 @@ public class OpenAiConfig {
     @Value("${openai.model}")
     private String model;
 
+    @Value("${openai.cleanup-model}")
+    private String cleanupModel;
+
+    @Value("${openai.cleanup-max-tokens}")
+    private int cleanupMaxTokens;
+
     @Value("${openai.enabled}")
     private boolean enabled;
 

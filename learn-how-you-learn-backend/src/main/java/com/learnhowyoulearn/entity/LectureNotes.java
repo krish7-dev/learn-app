@@ -77,6 +77,9 @@ public class LectureNotes {
     @Column(name = "raw_ai_response", columnDefinition = "jsonb")
     private JsonNode rawAiResponse;
 
+    @Column(name = "model", length = 100)
+    private String model;
+
     @Column(name = "chat_additions", columnDefinition = "TEXT")
     private String chatAdditions;
 

@@ -21,6 +21,7 @@ public class LectureNotesResponse {
     private JsonNode flashcards;
     private JsonNode practiceQuestions;
     private JsonNode weakAreaChecks;
+    private String model;
     private String chatAdditions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

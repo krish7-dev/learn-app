@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,13 +36,17 @@ public class NotesPersistenceService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public LectureNotes saveAll(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse) {
-        LectureNotes notes = saveOrUpdateNotes(lectureId, courseId, parsed, rawAiResponse);
+    public LectureNotes saveAll(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse, String model) {
+        LectureNotes notes = saveOrUpdateNotes(lectureId, courseId, parsed, rawAiResponse, model);
         markNotesGenerated(lectureId);
+        applyModuleIfBlank(lectureId, parsed.getSuggestedModule());
+
+        lectureTopicRepository.deleteByUserIdAndLectureId(USER_ID, lectureId);
 
         List<Long> topicIds = new ArrayList<>();
         if (parsed.getExtractedTopics() != null) {
             for (ExtractedTopic extracted : parsed.getExtractedTopics()) {
+                if (extracted.getName() == null || extracted.getName().isBlank()) continue;
                 Topic topic = upsertTopic(extracted);
                 topicIds.add(topic.getId());
                 upsertLectureTopic(lectureId, topic.getId(), extracted);
@@ -60,23 +66,49 @@ public class NotesPersistenceService {
         });
     }
 
-    private LectureNotes saveOrUpdateNotes(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse) {
+    private void applyModuleIfBlank(Long lectureId, String suggestedModule) {
+        if (suggestedModule == null || suggestedModule.isBlank()) return;
+        lectureRepository.findById(lectureId).ifPresent(lecture -> {
+            if (lecture.getModuleName() == null || lecture.getModuleName().isBlank()) {
+                lecture.setModuleName(suggestedModule.trim());
+                lectureRepository.save(lecture);
+            }
+        });
+    }
+
+    private static String strip(String s) {
+        if (s == null) return null;
+        return s.replaceAll("\\x00", "").replace("\\u0000", "");
+    }
+
+    private JsonNode stripJson(JsonNode node) {
+        if (node == null) return null;
+        try {
+            String json = objectMapper.writeValueAsString(node);
+            return objectMapper.readTree(json.replace("\\u0000", ""));
+        } catch (Exception e) {
+            return node;
+        }
+    }
+
+    private LectureNotes saveOrUpdateNotes(Long lectureId, Long courseId, ParsedNotesResponse parsed, JsonNode rawAiResponse, String model) {
         LectureNotes notes = lectureNotesRepository.findByUserIdAndLectureId(USER_ID, lectureId)
                 .orElse(LectureNotes.builder().userId(USER_ID).lectureId(lectureId).courseId(courseId).build());
+        if (model != null) notes.setModel(model);
 
-        notes.setTitle(parsed.getTitle());
-        notes.setFullCleanNotes(parsed.getFullCleanNotes());
-        notes.setSimpleExplanation(parsed.getSimpleExplanation());
-        notes.setPracticalUsage(parsed.getPracticalUsage());
-        notes.setExamples(parsed.getExamples());
-        notes.setMistakesToAvoid(parsed.getMistakesToAvoid());
-        notes.setEdgeCases(parsed.getEdgeCases());
-        notes.setRevisionNotes(parsed.getRevisionNotes());
-        notes.setInterviewQuestions(parsed.getInterviewQuestions());
-        notes.setFlashcards(parsed.getFlashcards());
-        notes.setPracticeQuestions(parsed.getPracticeQuestions());
-        notes.setWeakAreaChecks(parsed.getWeakAreaChecks());
-        notes.setRawAiResponse(rawAiResponse);
+        notes.setTitle(strip(parsed.getTitle()));
+        notes.setFullCleanNotes(strip(parsed.getFullCleanNotes()));
+        notes.setSimpleExplanation(strip(parsed.getSimpleExplanation()));
+        notes.setPracticalUsage(strip(parsed.getPracticalUsage()));
+        notes.setExamples(stripJson(parsed.getExamples()));
+        notes.setMistakesToAvoid(stripJson(parsed.getMistakesToAvoid()));
+        notes.setEdgeCases(stripJson(parsed.getEdgeCases()));
+        notes.setRevisionNotes(strip(parsed.getRevisionNotes()));
+        notes.setInterviewQuestions(stripJson(parsed.getInterviewQuestions()));
+        notes.setFlashcards(stripJson(parsed.getFlashcards()));
+        notes.setPracticeQuestions(stripJson(parsed.getPracticeQuestions()));
+        notes.setWeakAreaChecks(stripJson(parsed.getWeakAreaChecks()));
+        notes.setRawAiResponse(stripJson(rawAiResponse));
 
         return lectureNotesRepository.save(notes);
     }
@@ -94,17 +126,30 @@ public class NotesPersistenceService {
     }
 
     private void upsertLectureTopic(Long lectureId, Long topicId, ExtractedTopic extracted) {
-        if (lectureTopicRepository.existsByUserIdAndLectureIdAndTopicId(USER_ID, lectureId, topicId)) {
-            return;
+        String treePathJson = null;
+        if (extracted.getTreePath() != null && !extracted.getTreePath().isBlank()) {
+            try {
+                List<String> parts = Arrays.stream(extracted.getTreePath().split(">"))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .collect(Collectors.toList());
+                treePathJson = objectMapper.writeValueAsString(parts);
+            } catch (Exception ignored) {}
         }
-        lectureTopicRepository.save(LectureTopic.builder()
-                .userId(USER_ID)
-                .lectureId(lectureId)
-                .topicId(topicId)
-                .importance(extracted.getImportance() != null ? extracted.getImportance() : "MEDIUM")
-                .coverageLevel(extracted.getCoverageLevel() != null ? extracted.getCoverageLevel() : "INTRO")
-                .evidence(extracted.getEvidence())
-                .build());
+
+        LectureTopic record = lectureTopicRepository
+                .findByUserIdAndLectureIdAndTopicId(USER_ID, lectureId, topicId)
+                .orElse(LectureTopic.builder()
+                        .userId(USER_ID)
+                        .lectureId(lectureId)
+                        .topicId(topicId)
+                        .build());
+
+        record.setImportance(sanitizeImportance(extracted.getImportance()));
+        record.setCoverageLevel(sanitizeCoverageLevel(extracted.getCoverageLevel()));
+        record.setEvidence(extracted.getEvidence());
+        record.setTreePath(treePathJson);
+        lectureTopicRepository.save(record);
     }
 
     private void saveRevisionItems(Long lectureId, Long courseId, String title) {
@@ -153,5 +198,18 @@ public class NotesPersistenceService {
         }
 
         learningEventRepository.saveAll(events);
+    }
+
+    private static final java.util.Set<String> VALID_IMPORTANCE = java.util.Set.of("LOW", "MEDIUM", "HIGH", "CRITICAL");
+    private static final java.util.Set<String> VALID_COVERAGE = java.util.Set.of("INTRO", "INTERMEDIATE", "ADVANCED");
+
+    private String sanitizeImportance(String val) {
+        if (val != null && VALID_IMPORTANCE.contains(val.toUpperCase())) return val.toUpperCase();
+        return "MEDIUM";
+    }
+
+    private String sanitizeCoverageLevel(String val) {
+        if (val != null && VALID_COVERAGE.contains(val.toUpperCase())) return val.toUpperCase();
+        return "INTRO";
     }
 }

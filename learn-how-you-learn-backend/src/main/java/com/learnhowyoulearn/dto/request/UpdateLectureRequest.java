@@ -18,7 +18,7 @@ public class UpdateLectureRequest {
 
     private Integer sourceOrder;
 
-    @Size(max = 50000, message = "Content too large. Please split into multiple lectures.")
+    @Size(max = 200000, message = "Content too large (max 200,000 characters).")
     private String rawContent;
 
     private LectureStatus status;

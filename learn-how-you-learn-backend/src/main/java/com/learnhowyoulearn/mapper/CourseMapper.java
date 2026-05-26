@@ -26,6 +26,7 @@ public class CourseMapper {
                 .description(course.getDescription())
                 .goal(course.getGoal())
                 .status(course.getStatus())
+                .moduleOrder(course.getModuleOrder())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();

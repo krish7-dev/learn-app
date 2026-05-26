@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter @Builder
 public class CourseResponse {
@@ -13,6 +14,7 @@ public class CourseResponse {
     private String description;
     private String goal;
     private CourseStatus status;
+    private List<String> moduleOrder;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

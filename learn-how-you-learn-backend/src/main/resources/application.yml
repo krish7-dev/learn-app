@@ -33,7 +33,9 @@ spring:
 
 openai:
   api-key: ${OPENAI_API_KEY:change-me}
-  model: ${OPENAI_MODEL:gpt-4o-mini}
+  model: ${OPENAI_MODEL:gpt-4.1}
+  cleanup-model: ${OPENAI_CLEANUP_MODEL:gpt-4.1-mini}
+  cleanup-max-tokens: ${OPENAI_CLEANUP_MAX_TOKENS:16000}
   enabled: ${OPENAI_ENABLED:true}
   timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:60}
   base-url: https://api.openai.com/v1

@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: learnapp-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-learnapp}
+      POSTGRES_USER: ${DB_USERNAME:-learnapp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-learnapp} -d ${DB_NAME:-learnapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./learn-how-you-learn-backend
+    container_name: learnapp-backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-learnapp}
+      DB_USERNAME: ${DB_USERNAME:-learnapp}
+      DB_PASSWORD: ${DB_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      OPENAI_CLEANUP_MODEL: ${OPENAI_CLEANUP_MODEL:-gpt-4.1-mini}
+      OPENAI_CLEANUP_MAX_TOKENS: ${OPENAI_CLEANUP_MAX_TOKENS:-16000}
+      OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-60}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./learn-ui
+    container_name: learnapp-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

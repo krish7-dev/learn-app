@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
@@ -40,6 +42,12 @@ public class CourseController {
     public CourseResponse update(@PathVariable Long id,
                                  @Valid @RequestBody UpdateCourseRequest request) {
         return courseService.update(id, request);
+    }
+
+    @PatchMapping("/{id}/module-order")
+    public CourseResponse updateModuleOrder(@PathVariable Long id,
+                                            @RequestBody List<String> moduleOrder) {
+        return courseService.updateModuleOrder(id, moduleOrder);
     }
 
     @DeleteMapping("/{id}")

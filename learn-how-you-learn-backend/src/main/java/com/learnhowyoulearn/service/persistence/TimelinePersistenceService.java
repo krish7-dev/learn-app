@@ -23,9 +23,9 @@ public class TimelinePersistenceService {
     private final StudyTimelineItemRepository timelineItemRepository;
 
     @Transactional
-    public void saveTimeline(Long targetId, ParsedTimeline parsed) {
-        // Delete only future PENDING/SKIPPED/RESCHEDULED — DONE items are never touched
-        timelineItemRepository.deleteRegeneratableItems(targetId, LocalDate.now());
+    public void saveTimeline(Long targetId, ParsedTimeline parsed, LocalDate clearUntil) {
+        LocalDate today = LocalDate.now();
+        timelineItemRepository.deleteRegeneratableItems(targetId, today, clearUntil);
 
         List<StudyTimelineItem> items = new ArrayList<>();
         DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;

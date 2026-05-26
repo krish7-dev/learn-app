@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 @RestControllerAdvice
 @Slf4j
@@ -37,6 +38,12 @@ public class GlobalExceptionHandler {
                 .orElse("Validation failed");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(400, "Validation Error", message));
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientDisconnect(AsyncRequestNotUsableException ex) {
+        // Client closed the connection before response was written — nothing to do
+        log.debug("Client disconnected before response was written: {}", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

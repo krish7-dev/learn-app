@@ -1,5 +1,6 @@
 package com.learnhowyoulearn.service;
 
+import com.learnhowyoulearn.dto.context.ParsedTimeline;
 import com.learnhowyoulearn.dto.request.UpdateTimelineItemRequest;
 import com.learnhowyoulearn.dto.response.DayPlanResponse;
 import com.learnhowyoulearn.dto.response.StudyTimelineItemResponse;
@@ -9,6 +10,7 @@ import com.learnhowyoulearn.entity.StudyTimelineItem;
 import com.learnhowyoulearn.exception.ResourceNotFoundException;
 import com.learnhowyoulearn.repository.LearningTargetRepository;
 import com.learnhowyoulearn.repository.StudyTimelineItemRepository;
+import com.learnhowyoulearn.service.persistence.TimelinePersistenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class StudyTimelineService {
     private final StudyTimelineItemRepository timelineItemRepository;
     private final LearningTargetRepository learningTargetRepository;
     private final LearningTargetService learningTargetService;
+    private final TimelinePersistenceService timelinePersistenceService;
 
     @Transactional(readOnly = true)
     public DayPlanResponse getToday(Long targetId) {
@@ -66,11 +69,45 @@ public class StudyTimelineService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public WeekPlanResponse getFullTimeline(Long targetId) {
+        LearningTarget target = learningTargetRepository.findByIdAndUserId(targetId, USER_ID)
+                .orElseThrow(() -> new ResourceNotFoundException("Target not found: " + targetId));
+
+        LocalDate today = LocalDate.now();
+        LocalDate end = target.getTargetDate().isBefore(today) ? today : target.getTargetDate();
+
+        List<StudyTimelineItem> allItems = timelineItemRepository
+                .findByTargetIdAndScheduledDateBetween(targetId, today, end);
+
+        List<DayPlanResponse> days = new ArrayList<>();
+        for (LocalDate date = today; !date.isAfter(end); date = date.plusDays(1)) {
+            final LocalDate d = date;
+            List<StudyTimelineItem> dayItems = allItems.stream()
+                    .filter(i -> d.equals(i.getScheduledDate()))
+                    .toList();
+            days.add(buildDayPlan(date, dayItems, false));
+        }
+
+        return WeekPlanResponse.builder()
+                .target(learningTargetService.enrich(target))
+                .days(days)
+                .build();
+    }
+
+    @Transactional
+    public void importTimeline(Long targetId, ParsedTimeline timeline) {
+        LearningTarget target = learningTargetRepository.findByIdAndUserId(targetId, USER_ID)
+                .orElseThrow(() -> new ResourceNotFoundException("Target not found: " + targetId));
+        timelinePersistenceService.saveTimeline(targetId, timeline, target.getTargetDate());
+    }
+
     @Transactional
     public void clearTimeline(Long targetId) {
         learningTargetRepository.findByIdAndUserId(targetId, USER_ID)
                 .orElseThrow(() -> new ResourceNotFoundException("Target not found: " + targetId));
-        timelineItemRepository.deleteRegeneratableItems(targetId, LocalDate.now());
+        LocalDate today = LocalDate.now();
+        timelineItemRepository.deleteRegeneratableItems(targetId, today, today.plusDays(13));
     }
 
     @Transactional
@@ -105,32 +142,19 @@ public class StudyTimelineService {
         return timelineItemRepository
                 .findByUserIdAndScheduledDateAndStatusIn(userId, today, List.of("PENDING"))
                 .stream()
-                .filter(i -> "MINIMUM".equals(i.getPlanTier()))
                 .limit(5)
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     private DayPlanResponse buildDayPlan(LocalDate date, List<StudyTimelineItem> items, boolean hasMissedItems) {
-        List<StudyTimelineItemResponse> full = items.stream()
-                .filter(i -> "FULL".equals(i.getPlanTier())).map(this::toResponse).toList();
-        List<StudyTimelineItemResponse> medium = items.stream()
-                .filter(i -> "MEDIUM".equals(i.getPlanTier())).map(this::toResponse).toList();
-        List<StudyTimelineItemResponse> minimum = items.stream()
-                .filter(i -> "MINIMUM".equals(i.getPlanTier())).map(this::toResponse).toList();
-
-        int totalFull = items.stream().filter(i -> "FULL".equals(i.getPlanTier()))
-                .mapToInt(StudyTimelineItem::getEstimatedMinutes).sum();
-        int totalMin  = items.stream().filter(i -> "MINIMUM".equals(i.getPlanTier()))
-                .mapToInt(StudyTimelineItem::getEstimatedMinutes).sum();
+        List<StudyTimelineItemResponse> responses = items.stream().map(this::toResponse).toList();
+        int totalMinutes = items.stream().mapToInt(StudyTimelineItem::getEstimatedMinutes).sum();
 
         return DayPlanResponse.builder()
                 .date(date.format(DATE_FMT))
-                .fullPlan(full)
-                .mediumPlan(medium)
-                .minimumPlan(minimum)
-                .totalMinutesFull(totalFull)
-                .totalMinutesMinimum(totalMin)
+                .items(responses)
+                .totalMinutes(totalMinutes)
                 .hasMissedItems(hasMissedItems)
                 .build();
     }

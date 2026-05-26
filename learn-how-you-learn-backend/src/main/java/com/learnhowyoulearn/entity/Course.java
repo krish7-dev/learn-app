@@ -1,5 +1,6 @@
 package com.learnhowyoulearn.entity;
 
+import com.learnhowyoulearn.util.StringListConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -7,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "courses")
@@ -42,4 +44,8 @@ public class Course {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "module_order")
+    private List<String> moduleOrder;
 }

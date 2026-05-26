@@ -21,8 +21,9 @@ public interface StudyTimelineItemRepository extends JpaRepository<StudyTimeline
 
     @Modifying
     @Query("DELETE FROM StudyTimelineItem i WHERE i.targetId = :targetId " +
-           "AND i.scheduledDate >= :fromDate " +
+           "AND i.scheduledDate >= :fromDate AND i.scheduledDate <= :toDate " +
            "AND i.status IN ('PENDING', 'SKIPPED', 'RESCHEDULED')")
     void deleteRegeneratableItems(@Param("targetId") Long targetId,
-                                  @Param("fromDate") LocalDate fromDate);
+                                  @Param("fromDate") LocalDate fromDate,
+                                  @Param("toDate") LocalDate toDate);
 }

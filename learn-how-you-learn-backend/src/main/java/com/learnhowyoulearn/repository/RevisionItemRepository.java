@@ -11,4 +11,6 @@ public interface RevisionItemRepository extends JpaRepository<RevisionItem, Long
             Long userId, String status, LocalDateTime before);
 
     List<RevisionItem> findByUserIdAndStatusAndDueAtBefore(Long userId, String status, LocalDateTime before);
+
+    List<RevisionItem> findAllByUserIdAndStatus(Long userId, String status);
 }

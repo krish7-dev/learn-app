@@ -10,10 +10,7 @@ import java.util.List;
 public class DayPlanResponse {
 
     private String date;
-    private List<StudyTimelineItemResponse> fullPlan;
-    private List<StudyTimelineItemResponse> mediumPlan;
-    private List<StudyTimelineItemResponse> minimumPlan;
-    private int totalMinutesFull;
-    private int totalMinutesMinimum;
+    private List<StudyTimelineItemResponse> items;
+    private int totalMinutes;
     private boolean hasMissedItems;
 }

@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -19,4 +20,6 @@ public class TimelineGenerationContext {
     private List<RevisionItem> pendingRevisions;
     private List<WeakArea> activeWeakAreas;
     private LearningProfile learningProfile;
+    /** lectureId → nearest named tree parent (e.g. "Arrays", "Sorting") */
+    private Map<Long, String> lectureGroupMap;
 }

@@ -122,6 +122,18 @@ public class LectureService {
     }
 
     @Transactional
+    public LectureDetailResponse updateNotesContent(Long id, String fullCleanNotes) {
+        Lecture lecture = findOrThrow(id);
+        LectureNotes notes = lectureNotesRepository.findByUserIdAndLectureId(USER_ID, id)
+                .orElseThrow(() -> new ResourceNotFoundException("No notes found for lecture: " + id));
+        notes.setFullCleanNotes(fullCleanNotes);
+        LectureNotes saved = lectureNotesRepository.save(notes);
+        LectureDetailResponse response = lectureMapper.toDetail(lecture);
+        response.setNotes(lectureMapper.toNotesResponse(saved));
+        return response;
+    }
+
+    @Transactional
     public LectureDetailResponse addToNotes(Long id, AddToNotesRequest request) {
         Lecture lecture = findOrThrow(id);
         LectureNotes notes = lectureNotesRepository.findByUserIdAndLectureId(USER_ID, id)

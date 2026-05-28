@@ -126,6 +126,12 @@ public class LectureController {
         return lectureService.addToNotes(id, request);
     }
 
+    @PatchMapping("/api/v1/lectures/{id}/notes/content")
+    public LectureDetailResponse updateNotesContent(@PathVariable Long id,
+                                                    @RequestBody Map<String, String> body) {
+        return lectureService.updateNotesContent(id, body.get("fullCleanNotes"));
+    }
+
     @PostMapping("/api/v1/lectures/{id}/confusions")
     @ResponseStatus(HttpStatus.CREATED)
     public ConfusionResponse logConfusion(@PathVariable Long id,

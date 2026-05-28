@@ -236,16 +236,77 @@ function useCompletedHeadings(lectureId) {
 
 function LearnTab({ notes }) {
   const { id: lectureId } = useParams()
+  const qc = useQueryClient()
   const { completed, toggle } = useCompletedHeadings(lectureId)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+
+  const saveNotes = useMutation({
+    mutationFn: (content) => lectureApi.updateNotesContent(lectureId, content),
+    onSuccess: (data) => {
+      qc.setQueryData(['lecture', String(lectureId)], data)
+      setEditing(false)
+    },
+  })
+
   if (!notes?.fullCleanNotes) return <div className="empty-state">No notes yet. Generate them above.</div>
+
   const headings = extractHeadings(notes.fullCleanNotes)
+
+  const startEdit = () => { setDraft(notes.fullCleanNotes); setEditing(true) }
+  const cancelEdit = () => setEditing(false)
+
   return (
     <CompletionCtx.Provider value={{ completed, toggle }}>
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
         <div className="note-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="card" style={{ padding: '28px 32px' }}>
-            <Md>{notes.fullCleanNotes}</Md>
+            {/* Edit toolbar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: editing ? 12 : 0 }}>
+              {editing ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={cancelEdit}
+                    disabled={saveNotes.isPending}
+                  >Cancel</button>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => saveNotes.mutate(draft)}
+                    disabled={saveNotes.isPending}
+                  >{saveNotes.isPending ? 'Saving…' : 'Save'}</button>
+                </div>
+              ) : (
+                <button
+                  onClick={startEdit}
+                  style={{
+                    fontSize: 11, padding: '2px 10px', borderRadius: 6,
+                    border: '1px solid var(--border)', background: 'transparent',
+                    color: 'var(--muted)', cursor: 'pointer',
+                  }}
+                >✏ Edit</button>
+              )}
+            </div>
+
+            {editing ? (
+              <textarea
+                value={draft}
+                onChange={e => setDraft(e.target.value)}
+                style={{
+                  width: '100%', minHeight: 600,
+                  background: 'var(--code-bg)', color: 'var(--text)',
+                  border: '1px solid var(--border)', borderRadius: 8,
+                  padding: '16px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  fontSize: 13, lineHeight: 1.7, resize: 'vertical',
+                }}
+                autoFocus
+              />
+            ) : (
+              <Md>{notes.fullCleanNotes}</Md>
+            )}
+            {saveNotes.error && <div className="error-box" style={{ marginTop: 10 }}>{saveNotes.error.message}</div>}
           </div>
+
           {notes.chatAdditions && (
             <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #8b5cf6' }}>
               <div className="section-title" style={{ marginBottom: 12 }}>Notes from Chat</div>
@@ -253,7 +314,7 @@ function LearnTab({ notes }) {
             </div>
           )}
         </div>
-        <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} />
+        {!editing && <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} />}
       </div>
     </CompletionCtx.Provider>
   )

@@ -44,4 +44,7 @@ export const lectureApi = {
 
   addToNotes: (id, content) =>
     axiosClient.patch(`/lectures/${id}/notes/additions`, { content }).then((r) => r.data),
+
+  updateNotesContent: (id, fullCleanNotes) =>
+    axiosClient.patch(`/lectures/${id}/notes/content`, { fullCleanNotes }).then((r) => r.data),
 }

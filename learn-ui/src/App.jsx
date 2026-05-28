@@ -22,7 +22,9 @@ function Layout({ title, children }) {
   return (
     <div className="main-area">
       <TopNav title={title} />
-      <div className="page-content">{children}</div>
+      <div className="page-content">
+        <div className="page-inner">{children}</div>
+      </div>
     </div>
   )
 }

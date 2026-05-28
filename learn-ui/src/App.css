@@ -18,6 +18,12 @@
   padding: 24px;
 }
 
+.page-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 /* Desktop: sidebar is in-flow, collapses to width 0 */
 .sidebar {
   width: var(--sidebar-w);

@@ -242,12 +242,12 @@ function LearnTab({ notes }) {
   return (
     <CompletionCtx.Provider value={{ completed, toggle }}>
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div className="card" style={{ padding: '24px 28px' }}>
+        <div className="note-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card" style={{ padding: '28px 32px' }}>
             <Md>{notes.fullCleanNotes}</Md>
           </div>
           {notes.chatAdditions && (
-            <div className="card" style={{ padding: '24px 28px', borderLeft: '3px solid #8b5cf6' }}>
+            <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #8b5cf6' }}>
               <div className="section-title" style={{ marginBottom: 12 }}>Notes from Chat</div>
               <Md>{notes.chatAdditions}</Md>
             </div>
@@ -262,15 +262,15 @@ function LearnTab({ notes }) {
 function SimpleTab({ notes }) {
   if (!notes?.simpleExplanation && !notes?.practicalUsage) return <div className="empty-state">No notes yet.</div>
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="note-content" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {notes.simpleExplanation && (
-        <div className="card" style={{ padding: '24px 28px', borderLeft: '3px solid #10b981' }}>
+        <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #10b981' }}>
           <div className="section-title" style={{ marginBottom: 12 }}>Simple Explanation</div>
           <Md>{notes.simpleExplanation}</Md>
         </div>
       )}
       {notes.practicalUsage && (
-        <div className="card" style={{ padding: '24px 28px', borderLeft: '3px solid #f59e0b' }}>
+        <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #f59e0b' }}>
           <div className="section-title" style={{ marginBottom: 12 }}>Practical Usage</div>
           <Md>{notes.practicalUsage}</Md>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useContext, useCallback, createContext } from 'react'
+import { useState, useMemo, useRef, useEffect, useContext, useCallback, createContext } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
@@ -84,16 +84,27 @@ function extractHeadings(markdown) {
 }
 
 const CompletionCtx = createContext({ completed: new Set(), toggle: () => {} })
+const EditCtx = createContext({ startEdit: () => {} })
 
 function mkHeading(Tag) {
   return function HeadingWithId({ children, ...props }) {
     const id = slugify(nodeText(children))
     const { completed, toggle } = useContext(CompletionCtx)
+    const { startEdit } = useContext(EditCtx)
     const done = completed.has(id)
     return (
       <Tag id={id} {...props}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ flex: 1 }}>{children}</span>
+          <button
+            onClick={e => { e.stopPropagation(); startEdit(id) }}
+            style={{
+              fontSize: 10, padding: '1px 8px', borderRadius: 10, whiteSpace: 'nowrap',
+              border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--muted)',
+              cursor: 'pointer', fontWeight: 500, flexShrink: 0,
+            }}
+          >✏</button>
           <button
             onClick={e => { e.stopPropagation(); toggle(id) }}
             style={{
@@ -234,89 +245,116 @@ function useCompletedHeadings(lectureId) {
   return { completed, toggle }
 }
 
+function splitIntoSections(markdown) {
+  if (!markdown) return []
+  const lines = markdown.split('\n')
+  const sections = []
+  let buf = []
+  let hasHeading = false
+
+  const flush = () => {
+    if (!buf.length) return
+    const raw = buf.join('\n').trimEnd()
+    if (!raw) return
+    let id = null, level = 0
+    for (const l of buf) {
+      const m = l.match(/^(#{1,4})\s+(.+)$/)
+      if (m) { id = slugify(m[2]); level = m[1].length; break }
+    }
+    sections.push({ id: id ?? `section_${sections.length}`, level, raw })
+    buf = []
+    hasHeading = false
+  }
+
+  for (const line of lines) {
+    if (/^#{1,4}\s/.test(line) && hasHeading) flush()
+    buf.push(line)
+    if (/^#{1,4}\s/.test(line)) hasHeading = true
+  }
+  flush()
+  return sections
+}
+
 function LearnTab({ notes }) {
   const { id: lectureId } = useParams()
   const qc = useQueryClient()
   const { completed, toggle } = useCompletedHeadings(lectureId)
-  const [editing, setEditing] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState('')
 
+  const sections = useMemo(() => splitIntoSections(notes?.fullCleanNotes), [notes?.fullCleanNotes])
+
   const saveNotes = useMutation({
-    mutationFn: (content) => lectureApi.updateNotesContent(lectureId, content),
+    mutationFn: (fullCleanNotes) => lectureApi.updateNotesContent(lectureId, fullCleanNotes),
     onSuccess: (data) => {
       qc.setQueryData(['lecture', String(lectureId)], data)
-      setEditing(false)
+      setEditingId(null)
     },
   })
+
+  const startEdit = useCallback((id) => {
+    const section = sections.find(s => s.id === id)
+    if (section) { setDraft(section.raw); setEditingId(id) }
+  }, [sections])
+
+  const cancelEdit = () => setEditingId(null)
+
+  const handleSave = () => {
+    const fullMarkdown = sections.map(s => s.id === editingId ? draft : s.raw).join('\n\n')
+    saveNotes.mutate(fullMarkdown)
+  }
 
   if (!notes?.fullCleanNotes) return <div className="empty-state">No notes yet. Generate them above.</div>
 
   const headings = extractHeadings(notes.fullCleanNotes)
 
-  const startEdit = () => { setDraft(notes.fullCleanNotes); setEditing(true) }
-  const cancelEdit = () => setEditing(false)
-
   return (
-    <CompletionCtx.Provider value={{ completed, toggle }}>
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-        <div className="note-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div className="card" style={{ padding: '28px 32px' }}>
-            {/* Edit toolbar */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: editing ? 12 : 0 }}>
-              {editing ? (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={cancelEdit}
-                    disabled={saveNotes.isPending}
-                  >Cancel</button>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => saveNotes.mutate(draft)}
-                    disabled={saveNotes.isPending}
-                  >{saveNotes.isPending ? 'Saving…' : 'Save'}</button>
-                </div>
-              ) : (
-                <button
-                  onClick={startEdit}
-                  style={{
-                    fontSize: 11, padding: '2px 10px', borderRadius: 6,
-                    border: '1px solid var(--border)', background: 'transparent',
-                    color: 'var(--muted)', cursor: 'pointer',
-                  }}
-                >✏ Edit</button>
-              )}
+    <EditCtx.Provider value={{ startEdit }}>
+      <CompletionCtx.Provider value={{ completed, toggle }}>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+          <div className="note-content" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="card" style={{ padding: '28px 32px' }}>
+              {sections.map(section => (
+                editingId === section.id ? (
+                  <div key={section.id} style={{ marginBottom: 16 }}>
+                    <textarea
+                      value={draft}
+                      onChange={e => setDraft(e.target.value)}
+                      style={{
+                        width: '100%', minHeight: 220,
+                        background: 'var(--code-bg)', color: 'var(--text)',
+                        border: '1px solid var(--accent)', borderRadius: 8,
+                        padding: '14px 16px',
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontSize: 13, lineHeight: 1.7, resize: 'vertical',
+                      }}
+                      autoFocus
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={cancelEdit} disabled={saveNotes.isPending}>Cancel</button>
+                      <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saveNotes.isPending}>
+                        {saveNotes.isPending ? 'Saving…' : 'Save'}
+                      </button>
+                    </div>
+                    {saveNotes.error && <div className="error-box" style={{ marginTop: 8 }}>{saveNotes.error.message}</div>}
+                  </div>
+                ) : (
+                  <Md key={section.id}>{section.raw}</Md>
+                )
+              ))}
             </div>
 
-            {editing ? (
-              <textarea
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                style={{
-                  width: '100%', minHeight: 600,
-                  background: 'var(--code-bg)', color: 'var(--text)',
-                  border: '1px solid var(--border)', borderRadius: 8,
-                  padding: '16px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  fontSize: 13, lineHeight: 1.7, resize: 'vertical',
-                }}
-                autoFocus
-              />
-            ) : (
-              <Md>{notes.fullCleanNotes}</Md>
+            {notes.chatAdditions && (
+              <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #8b5cf6' }}>
+                <div className="section-title" style={{ marginBottom: 12 }}>Notes from Chat</div>
+                <Md>{notes.chatAdditions}</Md>
+              </div>
             )}
-            {saveNotes.error && <div className="error-box" style={{ marginTop: 10 }}>{saveNotes.error.message}</div>}
           </div>
-
-          {notes.chatAdditions && (
-            <div className="card" style={{ padding: '28px 32px', borderLeft: '3px solid #8b5cf6' }}>
-              <div className="section-title" style={{ marginBottom: 12 }}>Notes from Chat</div>
-              <Md>{notes.chatAdditions}</Md>
-            </div>
-          )}
+          <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} />
         </div>
-        {!editing && <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} />}
-      </div>
-    </CompletionCtx.Provider>
+      </CompletionCtx.Provider>
+    </EditCtx.Provider>
   )
 }
 

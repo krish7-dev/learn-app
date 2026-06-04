@@ -128,7 +128,7 @@ const mdComponents = {
   h1: mkHeading('h1'), h2: mkHeading('h2'), h3: mkHeading('h3'), h4: mkHeading('h4'),
 }
 
-function NotesIndex({ headings, completed, onToggle, className }) {
+function NotesIndex({ headings, completed, onToggle, onMarkAll, className }) {
   if (!headings.length) return null
   const doneCount = headings.filter(h => completed.has(h.id)).length
   const allDone = doneCount === headings.length
@@ -149,9 +149,22 @@ function NotesIndex({ headings, completed, onToggle, className }) {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <span>Contents</span>
-        <span style={{ color: allDone ? '#10b981' : 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
-          {doneCount}/{headings.length}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={() => onMarkAll(headings.map(h => h.id))}
+            title={allDone ? 'Clear all' : 'Mark all done'}
+            style={{
+              fontSize: 9, padding: '1px 6px', borderRadius: 8,
+              border: `1px solid ${allDone ? '#10b981' : 'var(--border)'}`,
+              background: allDone ? '#10b981' : 'transparent',
+              color: allDone ? '#fff' : 'var(--muted)',
+              cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap',
+            }}
+          >{allDone ? '✓ All' : 'Mark all'}</button>
+          <span style={{ color: allDone ? '#10b981' : 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
+            {doneCount}/{headings.length}
+          </span>
+        </div>
       </div>
       <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, marginBottom: 10 }}>
         <div style={{
@@ -242,7 +255,17 @@ function useCompletedHeadings(lectureId) {
       return next
     })
   }, [key])
-  return { completed, toggle }
+
+  const markAll = useCallback((ids) => {
+    setCompleted(prev => {
+      const allDone = ids.every(id => prev.has(id))
+      const next = allDone ? new Set() : new Set(ids)
+      localStorage.setItem(key, JSON.stringify([...next]))
+      return next
+    })
+  }, [key])
+
+  return { completed, toggle, markAll }
 }
 
 function splitIntoSections(markdown) {
@@ -278,7 +301,7 @@ function splitIntoSections(markdown) {
 function LearnTab({ notes }) {
   const { id: lectureId } = useParams()
   const qc = useQueryClient()
-  const { completed, toggle } = useCompletedHeadings(lectureId)
+  const { completed, toggle, markAll } = useCompletedHeadings(lectureId)
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState('')
 
@@ -351,7 +374,7 @@ function LearnTab({ notes }) {
               </div>
             )}
           </div>
-          <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} />
+          <NotesIndex className="notes-index" headings={headings} completed={completed} onToggle={toggle} onMarkAll={markAll} />
         </div>
       </CompletionCtx.Provider>
     </EditCtx.Provider>

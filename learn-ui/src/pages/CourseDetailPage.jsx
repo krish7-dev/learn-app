@@ -325,23 +325,26 @@ function CreateLectureModal({ courseId, existingSources, existingModules, onClos
   )
 }
 
-function ProgressBar({ completed, withNotes, withTranscript, noContent, total }) {
+function ProgressBar({ completed, inProgress, withNotes, withTranscript, noContent, total }) {
   if (total === 0) return null
-  const pctComplete = Math.round((completed / total) * 100)
-  const pctNotes    = Math.round((withNotes / total) * 100)
-  const pctTranscript = Math.round((withTranscript / total) * 100)
+  const pctComplete    = Math.round((completed / total) * 100)
+  const pctInProgress  = Math.round((inProgress / total) * 100)
+  const pctNotes       = Math.round((withNotes / total) * 100)
+  const pctTranscript  = Math.round((withTranscript / total) * 100)
 
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
         <Stat label="Total" value={total} color="var(--muted)" />
         <Stat label="Completed" value={completed} color="var(--success)" />
+        <Stat label="In Progress" value={inProgress} color="#f59e0b" />
         <Stat label="Notes ready" value={withNotes} color="#2563eb" />
         <Stat label="Transcript added" value={withTranscript} color="#7c3aed" />
         <Stat label="No content yet" value={noContent} color="var(--muted)" />
       </div>
       <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
         <div style={{ width: `${pctComplete}%`, background: 'var(--success)', transition: 'width 0.4s' }} />
+        <div style={{ width: `${pctInProgress}%`, background: '#f59e0b', transition: 'width 0.4s' }} />
         <div style={{ width: `${pctNotes}%`, background: '#2563eb', transition: 'width 0.4s' }} />
         <div style={{ width: `${pctTranscript}%`, background: '#7c3aed', transition: 'width 0.4s' }} />
       </div>
@@ -456,6 +459,7 @@ export default function CourseDetailPage() {
   const stats = {
     total: lectures.length,
     completed: lectures.filter(l => l.status === 'COMPLETED').length,
+    inProgress: lectures.filter(l => l.status === 'IN_PROGRESS').length,
     withNotes: lectures.filter(l => l.contentStatus === 'NOTES_GENERATED').length,
     withTranscript: lectures.filter(l => l.contentStatus === 'TRANSCRIPT_ADDED').length,
     noContent: lectures.filter(l => !l.contentStatus || l.contentStatus === 'NOT_ADDED').length,
@@ -506,6 +510,8 @@ export default function CourseDetailPage() {
         const items = byModule[module]
         const isCollapsed = !expanded.has(module)
         const notesReady = items.filter(l => l.contentStatus === 'NOTES_GENERATED').length
+        const doneCount = items.filter(l => l.status === 'COMPLETED').length
+        const inProgressCount = items.filter(l => l.status === 'IN_PROGRESS').length
         return (
         <div key={module} style={{ marginBottom: 24 }}>
           <div
@@ -541,6 +547,16 @@ export default function CourseDetailPage() {
                 <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 400 }}>
                   {notesReady}/{items.length} notes ready
                 </span>
+                {doneCount > 0 && (
+                  <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 500 }}>
+                    · {doneCount} done
+                  </span>
+                )}
+                {inProgressCount > 0 && (
+                  <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 500 }}>
+                    · {inProgressCount} in progress
+                  </span>
+                )}
               </span>
             )}
             {renamingModule !== module && (

@@ -589,9 +589,13 @@ export default function CourseDetailPage() {
           {!isCollapsed && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map((l) => (
               <Link key={l.id} to={`/lectures/${l.id}`}>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', gap: 12 }}
+                <div className="card" style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', gap: 12,
+                  ...(l.status === 'COMPLETED' && { borderColor: '#10b98150', background: '#10b98108' }),
+                  ...(l.status === 'IN_PROGRESS' && { borderColor: '#f59e0b50', background: '#f59e0b08' }),
+                }}
                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                     onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                     onMouseLeave={e => e.currentTarget.style.borderColor = l.status === 'COMPLETED' ? '#10b98150' : l.status === 'IN_PROGRESS' ? '#f59e0b50' : 'var(--border)'}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {l.title}
@@ -601,8 +605,6 @@ export default function CourseDetailPage() {
                       {l.contentStatus === 'NOTES_GENERATED' && <span style={{ color: '#2563eb', marginLeft: 8 }}>✓ Notes</span>}
                       {l.contentStatus === 'TRANSCRIPT_ADDED' && <span style={{ color: '#7c3aed', marginLeft: 8 }}>✓ Transcript</span>}
                       {(!l.contentStatus || l.contentStatus === 'NOT_ADDED') && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>No content</span>}
-                      {l.status === 'IN_PROGRESS' && <span style={{ color: '#f59e0b', marginLeft: 6 }}>▶ In Progress</span>}
-                      {l.status === 'COMPLETED' && <span style={{ color: 'var(--success)', marginLeft: 6 }}>✓ Done</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>

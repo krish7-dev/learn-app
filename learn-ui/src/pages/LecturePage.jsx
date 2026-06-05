@@ -916,6 +916,8 @@ function EditLectureModal({ lecture, onClose }) {
     onSuccess: (data) => {
       qc.setQueryData(['lecture', String(lecture.id)], data)
       qc.invalidateQueries({ queryKey: ['lectures', String(lecture.courseId)] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      qc.invalidateQueries({ queryKey: ['targets'] })
       onClose()
     },
   })

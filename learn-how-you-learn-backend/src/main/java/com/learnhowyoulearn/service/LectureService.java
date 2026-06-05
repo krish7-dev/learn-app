@@ -101,7 +101,11 @@ public class LectureService {
         }
         if (request.getStatus() != null)      lecture.setStatus(request.getStatus());
         if (request.getDifficulty() != null)  lecture.setDifficulty(request.getDifficulty());
-        return lectureMapper.toDetail(lectureRepository.save(lecture));
+        Lecture saved = lectureRepository.save(lecture);
+        LectureDetailResponse response = lectureMapper.toDetail(saved);
+        lectureNotesRepository.findByUserIdAndLectureId(USER_ID, saved.getId())
+                .ifPresent(notes -> response.setNotes(lectureMapper.toNotesResponse(notes)));
+        return response;
     }
 
     @Transactional

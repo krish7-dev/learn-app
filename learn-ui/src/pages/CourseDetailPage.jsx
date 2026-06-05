@@ -601,6 +601,8 @@ export default function CourseDetailPage() {
                       {l.contentStatus === 'NOTES_GENERATED' && <span style={{ color: '#2563eb', marginLeft: 8 }}>✓ Notes</span>}
                       {l.contentStatus === 'TRANSCRIPT_ADDED' && <span style={{ color: '#7c3aed', marginLeft: 8 }}>✓ Transcript</span>}
                       {(!l.contentStatus || l.contentStatus === 'NOT_ADDED') && <span style={{ color: 'var(--muted)', marginLeft: 8 }}>No content</span>}
+                      {l.status === 'IN_PROGRESS' && <span style={{ color: '#f59e0b', marginLeft: 6 }}>▶ In Progress</span>}
+                      {l.status === 'COMPLETED' && <span style={{ color: 'var(--success)', marginLeft: 6 }}>✓ Done</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>

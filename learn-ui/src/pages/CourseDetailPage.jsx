@@ -58,26 +58,39 @@ function parsePaste(text, defaultModule) {
     .filter(item => item.title)
 }
 
+const BATCH_CHUNK_SIZE = 5
+
 function ImportJsonBatchModal({ courseId, existingSources, existingModules, onClose }) {
   const [moduleName, setModuleName] = useState('')
   const [sourceName, setSourceName] = useState('')
   const [files, setFiles] = useState([])
   const [error, setError] = useState('')
+  const [progress, setProgress] = useState(null) // { done, total }
   const qc = useQueryClient()
 
   const importBatch = useMutation({
     mutationFn: async () => {
-      const contents = await Promise.all(
-        files.map(f => f.text())
-      )
-      return lectureApi.importNotesBatch(courseId, { moduleName: moduleName || null, sourceName: sourceName || null, contents })
+      const allContents = await Promise.all(files.map(f => f.text()))
+      const chunks = []
+      for (let i = 0; i < allContents.length; i += BATCH_CHUNK_SIZE)
+        chunks.push(allContents.slice(i, i + BATCH_CHUNK_SIZE))
+
+      setProgress({ done: 0, total: chunks.length })
+      for (let i = 0; i < chunks.length; i++) {
+        await lectureApi.importNotesBatch(courseId, {
+          moduleName: moduleName || null,
+          sourceName: sourceName || null,
+          contents: chunks[i],
+        })
+        setProgress({ done: i + 1, total: chunks.length })
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['lectures', courseId] })
       qc.invalidateQueries({ queryKey: ['learning-tree'] })
       onClose()
     },
-    onError: (e) => setError(e.message),
+    onError: (e) => { setError(e.message); setProgress(null) },
   })
 
   const handleFiles = (e) => {
@@ -139,7 +152,9 @@ function ImportJsonBatchModal({ courseId, existingSources, existingModules, onCl
             disabled={files.length === 0 || importBatch.isPending}
             onClick={() => importBatch.mutate()}
           >
-            {importBatch.isPending ? 'Importing…' : `Import ${files.length} File${files.length !== 1 ? 's' : ''}`}
+            {importBatch.isPending
+              ? progress ? `Batch ${progress.done}/${progress.total}…` : 'Reading files…'
+              : `Import ${files.length} File${files.length !== 1 ? 's' : ''}`}
           </button>
         </div>
       </div>

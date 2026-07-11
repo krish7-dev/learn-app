@@ -139,6 +139,11 @@ function NotesIndex({ headings, completed, onToggle, onMarkAll, className }) {
       maxHeight: 'calc(100vh - 100px)',
       overflowY: 'auto',
       alignSelf: 'flex-start',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 12,
+      padding: 14,
+      boxShadow: 'var(--shadow-card)',
     }}>
       {/* Header + progress */}
       <div style={{
@@ -648,12 +653,14 @@ function NotesSection({ notes }) {
           </button>
         ))}
       </div>
-      {sub === 'learn' && <LearnTab notes={notes} />}
-      {sub === 'simple' && <SimpleTab notes={notes} />}
-      {sub === 'examples' && <ExamplesTab notes={notes} />}
-      {sub === 'mistakes' && <MistakesTab notes={notes} />}
-      {sub === 'revise' && <ReviseTab notes={notes} />}
-      {sub === 'practice' && <PracticeTab notes={notes} />}
+      <div className="reading-zone">
+        {sub === 'learn' && <LearnTab notes={notes} />}
+        {sub === 'simple' && <SimpleTab notes={notes} />}
+        {sub === 'examples' && <ExamplesTab notes={notes} />}
+        {sub === 'mistakes' && <MistakesTab notes={notes} />}
+        {sub === 'revise' && <ReviseTab notes={notes} />}
+        {sub === 'practice' && <PracticeTab notes={notes} />}
+      </div>
     </div>
   )
 }

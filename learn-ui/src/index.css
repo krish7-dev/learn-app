@@ -1,37 +1,36 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0b0c10;
-  --surface: #171a23;
-  --surface2: #1d2130;
-  --border: #2d3347;
-  --text: #f5f7fb;
-  --muted: #a7afc2;
-  --accent: #6c63ff;
-  --accent-hover: #5b52ee;
-  --accent-soft: rgba(108, 99, 255, 0.12);
-  --success: #10b981;
+  --bg: #090b10;
+  --sidebar-bg: #121722;
+  --topbar-bg: #151a25;
+  --surface: #161e2d;
+  --surface2: #1c2536;
+  --border: #293244;
+  --text: #f1f5f9;
+  --muted: #a8b3c5;
+  --faint: #718096;
+  --accent: #7167ff;
+  --accent-hover: #8279ff;
+  --accent-soft: rgba(113, 103, 255, 0.14);
+  --success: #34d399;
   --warn: #f59e0b;
-  --danger: #ef4444;
+  --danger: #f87171;
   --radius: 8px;
   --sidebar-w: 240px;
-  --code-bg: #0b0f16;
-  --code-border: #30364a;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.24);
+  --code-bg: #0c111c;
+  --code-border: #293244;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.3);
 
-  /* Reading zone — warm, book-like palette for the actual study content,
-     kept distinct from the cool-purple app chrome so the eye can tell
-     "navigating" apart from "reading". */
-  --read-surface: #1e1811;
-  --read-surface2: #251d15;
-  --read-border: #3d3122;
-  --read-text: #f3ead8;
-  --read-muted: #b3a58c;
-  --highlight: #eab308;
-  --highlight-hover: #d19c06;
-  --highlight-soft: rgba(234, 179, 8, 0.14);
-  --read-code-bg: #150f0a;
-  --read-code-border: #3a2f22;
+  /* Reading zone — the note card recedes to its own darker elevation
+     with a single warm "study highlight" accent, so it reads as the
+     focal point instead of just another slab of chrome. */
+  --read-surface: #111827;
+  --highlight: #f6c344;
+  --highlight-hover: #e0b03d;
+  --highlight-soft: rgba(246, 195, 68, 0.14);
+  --read-code-bg: #0a0e17;
+  --read-code-border: #232c3d;
 }
 
 body {
@@ -93,10 +92,6 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
    page instead of another slab of app chrome. */
 .reading-zone {
   --surface: var(--read-surface);
-  --surface2: var(--read-surface2);
-  --border: var(--read-border);
-  --text: var(--read-text);
-  --muted: var(--read-muted);
   --accent: var(--highlight);
   --accent-hover: var(--highlight-hover);
   --accent-soft: var(--highlight-soft);

@@ -11,7 +11,7 @@ export default function TopNav({ title }) {
       alignItems: 'center',
       padding: '0 20px',
       gap: 12,
-      background: 'var(--surface)',
+      background: 'var(--topbar-bg)',
       flexShrink: 0,
     }}>
       <button onClick={toggle} style={{ fontSize: 16, padding: '4px 8px', color: 'var(--muted)' }}>☰</button>

@@ -27,7 +27,7 @@
 /* Desktop: sidebar is in-flow, collapses to width 0 */
 .sidebar {
   width: var(--sidebar-w);
-  background: var(--surface);
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   flex-shrink: 0;
   overflow: hidden;

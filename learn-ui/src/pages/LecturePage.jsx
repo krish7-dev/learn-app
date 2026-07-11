@@ -194,10 +194,10 @@ function NotesIndex({ headings, completed, onToggle, onMarkAll, className }) {
               onClick={() => document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               style={{
                 flex: 1, fontSize: 11, lineHeight: 1.4, cursor: 'pointer',
-                color: done ? '#10b981' : 'var(--muted)',
+                color: done ? '#10b981' : 'var(--text)',
               }}
               onMouseEnter={e => { if (!done) e.currentTarget.style.color = 'var(--accent)' }}
-              onMouseLeave={e => { if (!done) e.currentTarget.style.color = done ? '#10b981' : 'var(--muted)' }}
+              onMouseLeave={e => { if (!done) e.currentTarget.style.color = done ? '#10b981' : 'var(--text)' }}
             >
               {h.text}
             </span>

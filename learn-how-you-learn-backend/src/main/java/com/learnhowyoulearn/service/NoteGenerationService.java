@@ -197,6 +197,8 @@ public class NoteGenerationService {
     public List<LectureSummaryResponse> importNotesBatch(Long courseId, ImportNotesBatchRequest request) {
         List<LectureSummaryResponse> results = new ArrayList<>();
         List<String> contents = request.getContents();
+        List<String> fileNames = request.getFileNames();
+        int base = request.getStartOrder() != null ? request.getStartOrder() : 0;
         for (int i = 0; i < contents.size(); i++) {
             String raw = contents.get(i);
             ParsedNotesResponse parsed;
@@ -207,11 +209,14 @@ public class NoteGenerationService {
                 parsed = objectMapper.treeToValue(rawJson, ParsedNotesResponse.class);
             } catch (Exception e) {
                 log.error("Batch import parse failed for item {}: {}", i, e.getMessage());
-                throw new AiGenerationException("Could not parse file " + (i + 1) + ": " + e.getMessage());
+                throw new AiGenerationException("Could not parse file " + (base + i + 1) + ": " + e.getMessage());
             }
 
-            String title = parsed.getTitle() != null && !parsed.getTitle().isBlank()
-                    ? parsed.getTitle() : "Lecture " + (i + 1);
+            String fileName = fileNames != null && i < fileNames.size() ? fileNames.get(i) : null;
+            String title = fileName != null && !fileName.isBlank()
+                    ? fileName
+                    : parsed.getTitle() != null && !parsed.getTitle().isBlank()
+                            ? parsed.getTitle() : "Lecture " + (base + i + 1);
 
             Lecture lecture = Lecture.builder()
                     .userId(USER_ID)
@@ -219,7 +224,7 @@ public class NoteGenerationService {
                     .moduleName(request.getModuleName())
                     .sourceName(request.getSourceName())
                     .title(title)
-                    .sourceOrder(i + 1)
+                    .sourceOrder(base + i + 1)
                     .status(LectureStatus.NOT_STARTED)
                     .build();
             lecture = lectureRepository.save(lecture);

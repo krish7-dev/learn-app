@@ -71,9 +71,13 @@ function ImportJsonBatchModal({ courseId, existingSources, existingModules, onCl
   const importBatch = useMutation({
     mutationFn: async () => {
       const allContents = await Promise.all(files.map(f => f.text()))
+      const allFileNames = files.map(f => f.name.replace(/\.json$/i, ''))
       const chunks = []
-      for (let i = 0; i < allContents.length; i += BATCH_CHUNK_SIZE)
+      const nameChunks = []
+      for (let i = 0; i < allContents.length; i += BATCH_CHUNK_SIZE) {
         chunks.push(allContents.slice(i, i + BATCH_CHUNK_SIZE))
+        nameChunks.push(allFileNames.slice(i, i + BATCH_CHUNK_SIZE))
+      }
 
       setProgress({ done: 0, total: chunks.length })
       for (let i = 0; i < chunks.length; i++) {
@@ -81,6 +85,8 @@ function ImportJsonBatchModal({ courseId, existingSources, existingModules, onCl
           moduleName: moduleName || null,
           sourceName: sourceName || null,
           contents: chunks[i],
+          fileNames: nameChunks[i],
+          startOrder: i * BATCH_CHUNK_SIZE,
         })
         setProgress({ done: i + 1, total: chunks.length })
       }
@@ -107,7 +113,7 @@ function ImportJsonBatchModal({ courseId, existingSources, existingModules, onCl
         <h2>Import JSON Notes (Batch)</h2>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
           Select multiple <code>.json</code> files. Each file should follow the same structure as Import Notes.
-          A lecture will be created for each file using the <code>title</code> field inside the JSON.
+          A lecture will be created for each file, named after its file name.
         </p>
 
         <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>

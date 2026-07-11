@@ -10,4 +10,6 @@ public class ImportNotesBatchRequest {
     private String moduleName;
     private String sourceName;
     private List<String> contents;
+    private List<String> fileNames;
+    private Integer startOrder;
 }
